@@ -1,0 +1,319 @@
+<html>
+  <head>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+    
+    <meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+   
+    
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.0.0/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.0.0/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" gesture-detector vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights">
+      <a-assets>
+        <a-asset-item id="statue" src="./statue.glb"></a-asset-item> 
+        <img id="phone" src="./phone.png" crossorigin="anonymous">
+        <img id="web" src="./web.png" crossorigin="anonymous">
+        <img id="fb" src="./fb.png" crossorigin="anonymous">
+        <img id="insta" src="./insta.png" crossorigin="anonymous">
+            
+      </a-assets>
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+      <a-entity id="example-target" mindar-image-target="targetIndex: 0">
+        
+    
+      <a-gltf-model rotation="90 0 0 " position="0 -0.5 0" scale="0.5 0.5 0.5" src="#statue"  gesture-handler="minScale: 0.25; maxScale: 10" ></a-gltf-model>
+      <a-entity id="phonebtn" class="clickable" geometry="primitive: plane; height: 0.3; width: 0.3;" position="0 -1.2 0" rotation="0 0 0" material="src: #phone; opacity: 1; transparent: true;"></a-entity> 
+      <a-entity id="webbtn" class="clickable" geometry="primitive: plane; height: 0.3; width: 0.3;" position="0.3 -1.2 0" rotation="0 0 0" material="src: #web; opacity: 1; transparent: true;"></a-entity> 
+      <a-entity id="fbbtn" class="clickable" geometry="primitive: plane; height: 0.3; width: 0.3;" position="0.6 -1.2 0" rotation="0 0 0" material="src: #fb; opacity: 1; transparent: true;"></a-entity> 
+      <a-entity id="instabtn" class="clickable" geometry="primitive: plane; height: 0.3; width: 0.3;" position="-0.3 -1.2 0" rotation="0 0 0" material="src: #insta; opacity: 1; transparent: true;"></a-entity> 
+
+      </a-entity>   
+    </a-scene>  
+    
+
+    <script type="text/javascript">
+      
+      const exampleTarget = document.querySelector('#example-target');
+      exampleTarget.addEventListener("targetFound", event => {
+        console.log("target found");
+     
+
+      });
+
+      // detect target lost
+      exampleTarget.addEventListener("targetLost", event => {
+        console.log("target lost");
+       
+      });
+
+      
+      const phoneBtn = document.querySelector('#phonebtn');
+       phoneBtn.addEventListener("click", event => {
+       window.location.href = "tel:+49 8026 6723";
+       })
+
+       const webBtn = document.querySelector('#webbtn');
+       webBtn.addEventListener("click", event => {
+       window.location.href = "https://www.schliersbergalm.de/";
+       })
+
+       const fbBtn = document.querySelector('#fbbtn');
+       fbBtn.addEventListener("click", event => {
+       window.location.href = "https://www.facebook.com/Schliersbergalm";
+       })
+
+       const instaBtn = document.querySelector('#instabtn');
+       instaBtn.addEventListener("click", event => {
+       window.location.href = "https://www.instagram.com/schliersbergalm/";
+       })
+
+
+    /* global AFRAME, THREE */
+
+AFRAME.registerComponent("gesture-handler", {
+  schema: {
+    enabled: { default: true },
+    rotationFactor: { default: 5 },
+    minScale: { default: 0.3 },
+    maxScale: { default: 8 },
+  },
+
+  init: function () {
+    this.handleScale = this.handleScale.bind(this);
+    this.handleRotation = this.handleRotation.bind(this);
+
+    this.isVisible = false;
+    this.initialScale = this.el.object3D.scale.clone();
+    this.scaleFactor = 1;
+
+    exampleTarget.addEventListener("targetFound", (e) => {
+      this.isVisible = true;
+    });
+
+    exampleTarget.addEventListener("targetLost", (e) => {
+      this.isVisible = false;
+    });
+  },
+
+  update: function () {
+    if (this.data.enabled) {
+      this.el.sceneEl.addEventListener("onefingermove", this.handleRotation);
+      this.el.sceneEl.addEventListener("twofingermove", this.handleScale);
+    } else {
+      this.el.sceneEl.removeEventListener("onefingermove", this.handleRotation);
+      this.el.sceneEl.removeEventListener("twofingermove", this.handleScale);
+    }
+  },
+
+  remove: function () {
+    this.el.sceneEl.removeEventListener("onefingermove", this.handleRotation);
+    this.el.sceneEl.removeEventListener("twofingermove", this.handleScale);
+  },
+
+  handleRotation: function (event) {
+    if (this.isVisible) {
+      this.el.object3D.rotation.y +=
+        event.detail.positionChange.x * this.data.rotationFactor;
+      this.el.object3D.rotation.x +=
+        event.detail.positionChange.y * this.data.rotationFactor;
+    }
+  },
+
+  handleScale: function (event) {
+    if (this.isVisible) {
+      this.scaleFactor *=
+        1 + event.detail.spreadChange / event.detail.startSpread;
+
+      this.scaleFactor = Math.min(
+        Math.max(this.scaleFactor, this.data.minScale),
+        this.data.maxScale
+      );
+
+      this.el.object3D.scale.x = this.scaleFactor * this.initialScale.x;
+      this.el.object3D.scale.y = this.scaleFactor * this.initialScale.y;
+      this.el.object3D.scale.z = this.scaleFactor * this.initialScale.z;
+    }
+  },
+});
+
+// Component that detects and emits events for touch gestures
+
+AFRAME.registerComponent("gesture-detector", {
+  schema: {
+    element: { default: "" }
+  },
+
+  init: function() {
+    this.targetElement =
+      this.data.element && document.querySelector(this.data.element);
+
+    if (!this.targetElement) {
+      this.targetElement = this.el;
+    }
+
+    this.internalState = {
+      previousState: null
+    };
+
+    this.emitGestureEvent = this.emitGestureEvent.bind(this);
+
+    this.targetElement.addEventListener("touchstart", this.emitGestureEvent);
+
+    this.targetElement.addEventListener("touchend", this.emitGestureEvent);
+
+    this.targetElement.addEventListener("touchmove", this.emitGestureEvent);
+  },
+
+  remove: function() {
+    this.targetElement.removeEventListener("touchstart", this.emitGestureEvent);
+
+    this.targetElement.removeEventListener("touchend", this.emitGestureEvent);
+
+    this.targetElement.removeEventListener("touchmove", this.emitGestureEvent);
+  },
+
+  emitGestureEvent(event) {
+    const currentState = this.getTouchState(event);
+
+    const previousState = this.internalState.previousState;
+
+    const gestureContinues =
+      previousState &&
+      currentState &&
+      currentState.touchCount == previousState.touchCount;
+
+    const gestureEnded = previousState && !gestureContinues;
+
+    const gestureStarted = currentState && !gestureContinues;
+
+    if (gestureEnded) {
+      const eventName =
+        this.getEventPrefix(previousState.touchCount) + "fingerend";
+
+      this.el.emit(eventName, previousState);
+
+      this.internalState.previousState = null;
+    }
+
+    if (gestureStarted) {
+      currentState.startTime = performance.now();
+
+      currentState.startPosition = currentState.position;
+
+      currentState.startSpread = currentState.spread;
+
+      const eventName =
+        this.getEventPrefix(currentState.touchCount) + "fingerstart";
+
+      this.el.emit(eventName, currentState);
+
+      this.internalState.previousState = currentState;
+    }
+
+    if (gestureContinues) {
+      const eventDetail = {
+        positionChange: {
+          x: currentState.position.x - previousState.position.x,
+
+          y: currentState.position.y - previousState.position.y
+        }
+      };
+
+      if (currentState.spread) {
+        eventDetail.spreadChange = currentState.spread - previousState.spread;
+      }
+
+      // Update state with new data
+
+      Object.assign(previousState, currentState);
+
+      // Add state data to event detail
+
+      Object.assign(eventDetail, previousState);
+
+      const eventName =
+        this.getEventPrefix(currentState.touchCount) + "fingermove";
+
+      this.el.emit(eventName, eventDetail);
+    }
+  },
+
+  getTouchState: function(event) {
+    if (event.touches.length === 0) {
+      return null;
+    }
+
+    // Convert event.touches to an array so we can use reduce
+
+    const touchList = [];
+
+    for (let i = 0; i < event.touches.length; i++) {
+      touchList.push(event.touches[i]);
+    }
+
+    const touchState = {
+      touchCount: touchList.length
+    };
+
+    // Calculate center of all current touches
+
+    const centerPositionRawX =
+      touchList.reduce((sum, touch) => sum + touch.clientX, 0) /
+      touchList.length;
+
+    const centerPositionRawY =
+      touchList.reduce((sum, touch) => sum + touch.clientY, 0) /
+      touchList.length;
+
+    touchState.positionRaw = { x: centerPositionRawX, y: centerPositionRawY };
+
+    // Scale touch position and spread by average of window dimensions
+
+    const screenScale = 2 / (window.innerWidth + window.innerHeight);
+
+    touchState.position = {
+      x: centerPositionRawX * screenScale,
+      y: centerPositionRawY * screenScale
+    };
+
+    // Calculate average spread of touches from the center point
+
+    if (touchList.length >= 2) {
+      const spread =
+        touchList.reduce((sum, touch) => {
+          return (
+            sum +
+            Math.sqrt(
+              Math.pow(centerPositionRawX - touch.clientX, 2) +
+                Math.pow(centerPositionRawY - touch.clientY, 2)
+            )
+          );
+        }, 0) / touchList.length;
+
+      touchState.spread = spread * screenScale;
+    }
+
+    return touchState;
+  },
+
+  getEventPrefix(touchCount) {
+    const numberNames = ["one", "two", "three", "many"];
+
+    return numberNames[Math.min(touchCount, 4) - 1];
+  }
+});
+      
+    </script>
+  </body>
+</html>
